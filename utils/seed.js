@@ -6,11 +6,6 @@ connection.on('error', (err) => err);
 connection.once('open', async () => {
   console.log('connected');
 
-  // Drop existing Thoughts
-  await Thought.deleteMany({});
-
-  // Drop existing Users
-  await User.deleteMany({});
 
 
   const users = [
@@ -45,6 +40,35 @@ connection.once('open', async () => {
     },
   ];
 
+  // Drop existing Thoughts
+  await Thought.deleteMany({});
+
+  // Drop existing Users
+  await User.deleteMany({});
+  // Add users to the collection and await the results
+  await User.collection.insertMany(users);
+
+  let user;
+  let newThought;
+  for (let thought of thoughts) {
+    console.log("Searching for ", thought.username);
+    user = await User.findOne({ username: thought.username });
+    if (!user) {
+      console.log("something went wrong");
+      exit();
+    } else {
+      console.log("Found", user.username, user.thoughts);
+    }
+    newThought = await Thought.collection.insertOne(thought);
+
+    await user.thoughts.push(newThought.insertedId);
+    try {
+      await user.save();
+      console.log("saved", user);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   // Log out the seed data to indicate what should appear in the database
   console.table(users);
   console.table(thoughts);

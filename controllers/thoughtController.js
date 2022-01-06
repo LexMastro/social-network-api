@@ -1,4 +1,4 @@
-const { Thought, User } = require('../models');
+const Thought = require('../models/Thought.js');
 
 module.exports = {
   // Get all thoughts
@@ -6,7 +6,7 @@ module.exports = {
     Thought.find()
       .then(async (thought) => {
         const thoughtObj = {
-          user,
+          thought,
         };
         return res.json(thoughtObj);
       })
@@ -28,7 +28,10 @@ module.exports = {
   },
   // Create a thought
   createThought(req, res) {
-    Thought.create(req.body)
+    Thought.create({
+      thoughtText: req.body.thoughtText,
+      thoughtName: req.body.thoughtName,
+    })
       .then((thought) => res.json(thought))
       .catch((err) => {
         console.log(err);

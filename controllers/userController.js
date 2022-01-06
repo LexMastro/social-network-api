@@ -1,4 +1,4 @@
-const { User, Thought } = require('../models');
+const User = require('../models/User.js');
 
 module.exports = {
   // Get all users
@@ -17,7 +17,7 @@ module.exports = {
   },
   // Get a single user
   getSingleUser(req, res) {
-    User.findOne({ _id: req.params.userId })
+    User.findOne({ _id: req.params.id })
       .select('-__v')
       .then(async (user) =>
         !user
@@ -37,16 +37,16 @@ module.exports = {
       .then((user) => res.json(user))
       .catch((err) => res.status(500).json(err));
   },
-  // Delete a user and remove them as a friend
+
   deleteUser(req, res) {
-    User.findOneAndRemove({ _id: req.params.userId })
-      .then(async (user) => {
-        // loop thought array in user & find & delete each item 
-        for (let index = 0; index < user.thoughts.length; index++) {
-          const thoughtId = user.thoughts[index];
-          await Thought.findByIdAndDelete(thoughtId)
-        }
-      })
+    User.findOneAndRemove({ _id: req.params.id })
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No such user exists' })
+          : User.deleteMany(
+            { users: req.params.id },
+          )
+      )
       .then((thought) =>
         !thought
           ? res.status(404).json({
@@ -63,7 +63,7 @@ module.exports = {
   // Update User
   updateUser(req, res) {
     User.findOneAndUpdate(
-      { _id: req.params.userId },
+      { _id: req.params.id },
       { $set: req.body },
       { runValidators: true, new: true }
     )
