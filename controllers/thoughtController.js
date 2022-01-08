@@ -1,4 +1,4 @@
-const Thought = require('../models/Thought.js');
+const { User, Thought } = require('../models');
 
 module.exports = {
   // Get all thoughts
@@ -17,7 +17,7 @@ module.exports = {
   },
   // Get a thought
   getSingleThought(req, res) {
-    Thought.findOne({ _id: req.params.thoughtId })
+    Thought.findOne({ _id: req.params.id })
       .select('-__v')
       .then((thought) =>
         !thought
@@ -38,21 +38,27 @@ module.exports = {
         return res.status(500).json(err);
       });
   },
+
   // Delete a thought
   deleteThought(req, res) {
-    Thought.findOneAndDelete({ _id: req.params.thoughtId })
-      .then((thought) =>
+    Thought.findOneAndUpdate(
+      { $pull: { thoughts: req.params.id } },
+      { new: true, }
+    )
+      .select('-__v')
+      .then(thought =>
         !thought
-          ? res.status(404).json({ message: 'No thought with that ID' })
-          : User.deleteMany({ _id: { $in: thought.reactions } })
+          ? res.status(404).json({ message: "I can't find a thought with that id." })
+          : res.json({ message: `Thought has successfully been removed`, thought })
       )
-      .then(() => res.json({ message: 'Thought and reactions deleted!' }))
-      .catch((err) => res.status(500).json(err));
+      .catch(err => res.status(400).json(err));
+
   },
+
   // Update a thought
   updateThought(req, res) {
     Thought.findOneAndUpdate(
-      { _id: req.params.thoughtId },
+      { _id: req.params.id },
       { $set: req.body },
       { runValidators: true, new: true }
     )
@@ -63,4 +69,39 @@ module.exports = {
       )
       .catch((err) => res.status(500).json(err));
   },
+
+  // Add Friend
+  addReaction(req, res) {
+    User.findOneAndUpdate(
+      { $addToSet: { reactionBody: req.params.id } },
+      { new: true, upsert: true, }
+    )
+      .select('-__v')
+
+      .then(reaction =>
+        !reaction
+          ? res.status(404).json({ message: "I can't find a reaction with that id." })
+          : res.json({ message: `Successfully added a Reaction`, reaction })
+      )
+
+      .catch(err => res.json(err));
+
+  },
+
+  // delete a Friend
+  deleteReaction(req, res) {
+    User.findOneAndUpdate(
+      { $pull: { reactionBody: req.params.id } },
+      { new: true, }
+    )
+      .select('-__v')
+      .then(reaction =>
+        !reaction
+          ? res.status(404).json({ message: "I can't find a reaction with that id." })
+          : res.json({ message: `Successfully deleted a Reaction`, reaction })
+      )
+      .catch(err => res.status(400).json(err));
+
+  },
+
 };
