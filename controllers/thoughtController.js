@@ -19,18 +19,24 @@ module.exports = {
   getSingleThought(req, res) {
     Thought.findOne({ _id: req.params.id })
       .select('-__v')
-      .then((thought) =>
+      .then(async (thought) =>
         !thought
           ? res.status(404).json({ message: 'No thought with that ID' })
-          : res.json(thought)
+          : res.json({
+            thought,
+          })
       )
-      .catch((err) => res.status(500).json(err));
+      .catch((err) => {
+        console.log(err);
+        return res.status(500).json(err);
+      });
   },
   // Create a thought
   createThought(req, res) {
     Thought.create({
+      username: req.body.username,
       thoughtText: req.body.thoughtText,
-      thoughtName: req.body.thoughtName,
+      // thoughtName: req.body.thoughtName,
     })
       .then((thought) => res.json(thought))
       .catch((err) => {
